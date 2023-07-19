@@ -83,7 +83,7 @@ def simple(net):
         gateway_address = values[1].rstrip()
 
     info("*** Adding controller\n")
-    #c0 = net.addController( 'c0' )
+    c0 = net.addController( 'c0' )
 
     info("*** Adding hosts\n")
     h1 = net.addHost( 'h1')

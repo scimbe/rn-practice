@@ -70,7 +70,7 @@ def topology():
     info("*** Adding hosts\n")
     h1 = net.addHost( 'h1')
   
-    h2 = net.addHost( 'h2', ip='10.0.2.2/24', defaultRoute='via 10.0.2.1' )
+    h2 = net.addHost( 'h2', ip='10.0.6.2/24', defaultRoute='via 10.0.6.1' )
 
     info("*** Adding hosts and routers\n")
     r1 = net.addHost('r1', cls=LinuxRouter)
@@ -92,13 +92,13 @@ def topology():
     h1.cmd('ifconfig h1-eth0 10.0.5.2/24')
     h1.cmd('ip route add default via 10.0.5.1')
     h1.cmd('ifconfig h1-eth1 10.0.1.2/24')
-    h1.cmd('ip route add 10.0.2.0/24 via 10.0.1.1')
+    h1.cmd('ip route add 10.0.6.0/24 via 10.0.1.1')
     
     r1.cmd('ifconfig r1-eth0 10.0.1.1/24')
     r1.cmd('ifconfig r1-eth1 10.0.4.1/24')
-    r1.cmd('ip route add 10.0.2.0/24 via 10.0.4.2')
+    r1.cmd('ip route add 10.0.6.0/24 via 10.0.4.2')
 
-    r2.cmd('ifconfig r2-eth1 10.0.2.1/24')
+    r2.cmd('ifconfig r2-eth1 10.0.6.1/24')
     r2.cmd('ifconfig r2-eth0 10.0.4.2/24')
     r2.cmd('ip route add 10.0.1.0/24 via 10.0.4.1')
 

@@ -34,6 +34,7 @@ from mininet.link import TCLink
 from mininet.link import Intf
 from mininet.nodelib import NAT
 from mininet.util import quietRun
+from mininet.term import makeTerm
 
 class LinuxRouter(Node):
     def config(self, **params):
@@ -43,7 +44,7 @@ class LinuxRouter(Node):
     def terminate(self):
         self.cmd('sysctl net.ipv4.ip_forward=0')
         super(LinuxRouter, self).terminate()
-        
+
 def checkIntf( intf ):
     "Make sure intf exists and is not configured."
     config = quietRun( 'ifconfig %s 2>/dev/null' % intf, shell=True )
@@ -112,8 +113,10 @@ def topology():
 
     info("*** Running CLI\n")
     h1.cmd('dnsmasq --log-queries --no-daemon  --resolv-file=./resolve.conf --addn-hosts=./dnsmasq.hosts 2> dns.log &')
-    h1.cmd('xterm -xrm \'XTerm.vt100.allowTitleOps: false\' -T \'h1 (Host 1)\' &')
-    h2.cmd('xterm -xrm \'XTerm.vt100.allowTitleOps: false\' -T \'h2 (Host 2)\' &')
+#    h1.cmd('xterm -xrm \'XTerm.vt100.allowTitleOps: false\' -T \'h1 (Host 1)\' &')
+#    h2.cmd('xterm -xrm \'XTerm.vt100.allowTitleOps: false\' -T \'h2 (Host 2)\' &')
+    makeTerm(h1)
+    makeTerm(h2)
     CLI( net )
 
     info("*** Stopping network\n")

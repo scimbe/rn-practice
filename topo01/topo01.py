@@ -57,26 +57,9 @@ def checkIntf( intf ):
                'and is probably in use!\n' )
         info("!!! Not sure if this is a problem - Should keep an eye on this\n")
 
-class SimpleTestNet(Topo):
-    def build(self):
-       net = Mininet(controller=Controller, link=TCLink)
-       simple(net)
-    
-class SimpleTestNetXterm(Topo):
-    def build(self):
-        net = Mininet(controller=Controller, link=TCLink)
-        simple(net)
-        callXTerm(net)
+def topology():
+    net = Mininet( controller=Controller, link=TCLink)
 
-      
-def callXTerm(net):
-    h1 = net.get('h1')
-    h2 = net.get('h2')
-    makeTerm(h1)
-    makeTerm(h2)
-     	
-def simple(net):
-    
     with open('interface.txt', 'r') as file:
         values = file.readlines()
         interface_name = values[0].rstrip()
@@ -130,10 +113,18 @@ def simple(net):
 
     info("*** Running CLI\n")
     h1.cmd('dnsmasq --log-queries --no-daemon  --resolv-file=./resolve.conf --addn-hosts=./dnsmasq.hosts 2> dns.log &')
+#    h1.cmd('xterm -xrm \'XTerm.vt100.allowTitleOps: false\' -T \'h1 (Host 1)\' &')
+#    h2.cmd('xterm -xrm \'XTerm.vt100.allowTitleOps: false\' -T \'h2 (Host 2)\' &')
+    makeTerm(h1)
+    makeTerm(h2)
+    CLI( net )
 
+    info("*** Stopping network\n")
+    net.stop()
 
-topos = { 'simple': ( lambda: SimpleTestNet() ), 'simple-xterm': ( lambda: SimpleTestNetXterm() ) }
-
+if __name__ == '__main__':
+    setLogLevel( 'info' )
+    topology()
     
 # Backlog
     #natParams = { 'ip' : '%s/24' % '192.168.0.1' }
@@ -142,3 +133,4 @@ topos = { 'simple': ( lambda: SimpleTestNet() ), 'simple-xterm': ( lambda: Simpl
     #net.addLink(nat, s0, intfName1='nat-eth1') 
     
     
+

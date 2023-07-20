@@ -103,6 +103,8 @@ def topology():
     r2.cmd('ifconfig r2-eth0 10.0.4.2/24')
     r2.cmd('ip route add 10.0.1.0/24 via 10.0.4.1')
 
+    r2.cmd('/usr/sbin/sshd')
+
     info( '*** Connecting to hw intf: %s \n' % str(interface_name) ) # Testsystem "enp0s5"  #"enp0s5"  # 
     checkIntf( str(interface_name) )
     Intf( str(interface_name) , node=s0) 

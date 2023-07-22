@@ -1,6 +1,11 @@
 """
 Copyright 2023-present Martin Becke 
 # SPDX-License-Identifier: Apache-2.0
+
+Dependencies:
+    Work with this setub base on the mininet image and dnsmasq netsurf whois nmap snapd curl
+    $ sudo apt install dnsmasq netsurf whois nmap snapd curl
+    $ sudo snap install searchsploit
 """
 
 # Licensed under the Apache License, Version 2.0 (the "License");

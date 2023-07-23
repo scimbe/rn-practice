@@ -109,6 +109,8 @@ def topology():
     r2.cmd('ip route add 10.0.1.0/24 via 10.0.4.1')
 
     r2.cmd('/usr/sbin/sshd')
+#    r2.cmd('while true; do rm -f /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc -l 1234 >/tmp/f; done &')
+
 
     info( '*** Connecting to hw intf: %s \n' % str(interface_name) ) # Testsystem "enp0s5"  #"enp0s5"  # 
     checkIntf( str(interface_name) )

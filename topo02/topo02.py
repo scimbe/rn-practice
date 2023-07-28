@@ -6,45 +6,116 @@ from mininet.link import TCLink
 from mininet.log import setLogLevel
 from mininet.cli import CLI
 
-def create_bottleneck_scenario():
-    net = Mininet(controller=Controller, link=TCLink, switch=OVSKernelSwitch)
 
-    # Hinzufügen der Controller-Komponente
-    net.addController('c0')
+from mininet.net import Mininet
+from mininet.node import Node, OVSKernelSwitch, Controller, RemoteController
+#from mininet.node import Node, Host, OVSSwitch, OVSKernelSwitch, Controller, RemoteController, DefaultController
+from mininet.cli import CLI
+from mininet.link import Link, TCLink, Intf
+from mininet.topo import Topo
+from mininet.log import setLogLevel, info
+from mininet.node import Node
+from typing import List, Dict, Tuple, Union
+from mininet.term import makeTerm
+import os
 
-    # Hinzufügen der Nodes
-    h1 = net.addHost('h1')
-    h2 = net.addHost('h2')
-    r1 = net.addHost('r1')
-    r2 = net.addHost('r2')
-    h3 = net.addHost('h3')
-    h4 = net.addHost('h4')
 
-    # Hinzufügen der Switches
-    s1 = net.addSwitch('s1')
-    s2 = net.addSwitch('s2')
+N=5
 
-    # Links konfigurieren
-    net.addLink(h1, s1, bw=10, delay='5ms')
-    net.addLink(h2, s1, bw=10, delay='5ms')
-    net.addLink(s1, r1, bw=10, delay='5ms')
-    net.addLink(r1, s2, bw=10, delay='5ms')
-    net.addLink(s2, r2, bw=10, delay='5ms')
-    net.addLink(h3, s2, bw=10, delay='5ms')
-    net.addLink(h4, s2, bw=10, delay='5ms')
+class RTopo(Topo):
 
-    # Starten des Netzwerks
+    def build(self, **_opts):     
+        h = [0]*(N+2)		# h[0], h[N+1] are a special case
+        r = [0]*(N+1)
+        # we need some router
+        for i in range(1, N+1):
+            r[i] = self.addHost( 'r{}'.format(i) )
+        # now do the same for hosts
+        for i in range(0, N+2):
+            h[i] = self.addHost( 'h{}'.format(i) )
+            
+        # Set up the the ri--hi links
+        self.addLink( h[0], r[1], intfName1 = 'h0-eth0', intfName2 = 'r1-eth1')		# special case: h[0]--r[1] link
+        self.addLink( h[N+1], r[N], intfName1 = 'h{}-eth0'.format(N+1), intfName2 = 'r{}-eth2'.format(N))		# special case: h[0]--r[1] link
+        
+        for i in range(1,N+1):		# 
+            self.addLink(h[i], r[i], intfName1='h{}-eth0'.format(i), intfName2='r{}-eth0'.format(i))
+
+        # now set up the links r1--r2--...--rN, by joining each r[i] and r[i+1]
+        for i in range(1,N):
+            self.addLink(r[i], r[i+1], intfName1 = 'r{}-eth2'.format(i), intfName2='r{}-eth1'.format(i+1))
+
+def  setup_router_ip(net):
+    for i in range(1,N+1):
+        rname = 'r{}'.format(i)
+        r=net[rname]
+        if0name='{}-eth0'.format(rname)
+        ip0addr='10.0.{}.1'.format(10*i)
+        r.cmd('ifconfig {} {}/24'.format(if0name, ip0addr))
+        if1name='{}-eth1'.format(rname)
+        ip1addr='10.0.{}.2'.format(i-1)		# correct for i==0
+        r.cmd('ifconfig {} {}/24'.format(if1name, ip1addr))
+        if2name='{}-eth2'.format(rname)
+        ip2addr='10.0.{}.1'.format(i)
+        r.cmd('ifconfig {} {}/24'.format(if2name, ip2addr))
+        r.cmd('sysctl net.ipv4.ip_forward=1')
+        ifacelist = r.intfList()
+        for iface in ifacelist:
+            if iface != 'lo': r.cmd('sysctl net.ipv4.conf.{}.rp_filter=0'.format(iface))
+
+def setup_host_ip(net):
+    # h0 is special
+    h0 = net['h0']
+    h0.cmd('ifconfig h0-eth0 10.0.0.1/24')
+    h0.cmd('ip route add to default via 10.0.0.2')
+    
+    for i in range(1, N+1):
+        hname = 'h{}'.format(i)		
+        hi = net[hname]
+        hi.cmd('ifconfig {}-eth0 10.0.{}.10/24'.format(hname, 10*i))
+        hi.cmd('ip route add to default via 10.0.{}.1'.format(10*i))
+
+def setup_route(net):
+     for k in range(0,N+1):
+          for i in range(1,N+1):
+             rname = 'r{}'.format(i)
+             r=net[rname]
+             if0name='{}-eth1'.format(rname)
+             if1name='{}-eth2'.format(rname)
+	   	
+             if i > k:
+               #   for z in range(1,N+1):
+               #   	if z > (i):
+               #   	    tmp = 'r{}'.format(z)
+               #   	    t=net[tmp]
+               #   	    t.cmd('ip route add 10.0.{}.0/24 via 10.0.{}.1 dev {}'.format((i), ((i-1)), if0name))
+                  r.cmd('ip route add 10.0.{}.0/24 via 10.0.{}.1 dev {}'.format((10*(k)), ((i-1)), if0name))
+             if i < k:
+                  # for z in range(1,N+1):
+                  #	if z < (i):
+                  #	    r.cmd('ip route add 10.0.{}.0/24 via 10.0.{}.2 dev {}'.format((z-1), (i), if1name)) 
+                  r.cmd('ip route add 10.0.{}.0/24 via 10.0.{}.2 dev {}'.format((10*(k)), (i), if1name))
+        
+        
+def run():
+    rtopo = RTopo()
+    net = Mininet(topo = rtopo, link=TCLink, autoSetMacs = True)
     net.start()
+    
+    # Setup Router IP adresses
+    setup_router_ip(net)
+    setup_host_ip(net)
+    setup_route(net)
+    for i in range(0, N+1):
+        hname = 'h{}'.format(i)		
+        hi = net[hname]
+        makeTerm(hi)
 
-    # Namensauflösung ermöglichen
-#    net.pingAll()
+    CLI( net)
+    
 
-    # Eingabeaufforderung öffnen
-    CLI(net)
-
-    # Netzwerk stoppen
-    net.stop()
-
+    net.stop()    
+    
 if __name__ == '__main__':
-    setLogLevel('info')
-    create_bottleneck_scenario()
+    setLogLevel('debug')
+    run()

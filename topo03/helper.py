@@ -192,7 +192,7 @@ def ip(subnet : int ,host : int ,prefix=None):
 def mkdir_if_necessary(dir : str):
     #if path.isdir(dir): return
     Path(dir).mkdir(parents=True, exist_ok=True)
-    os.chmod(dir, 0o777)
+    os.chmod(dir, 0o666)
 
 # workaround for the fact that Python modules do not share global variables
 def setdirprefix(dp : str):

@@ -115,7 +115,7 @@ def run():
         if i<N or ANYCAST:
             r.cmd('ifconfig {} {}/24'.format(if2name, ip2addr))
         r.cmd('sysctl net.ipv4.ip_forward=1')
-        r.cmd('usermod -a -G frr,frrvty mininet')
+        r.cmd('usermod -a -G frr,frrvty root')
         rp_disable(r)
         
     addrdict = addressdict(BGPnodelist)
@@ -206,7 +206,7 @@ def start_zebra(r : Node):
     log =  dir + 'zebra.log'
     zsock=  dir + 'zserv.api'
     # r.cmd('> {}'.format(log))			# this creates the file with the wrong permissions
-    r.cmd('sudo rm -f {}'.format(pid))    	# we need to delete the pid file
+    r.cmd('rm -f {}'.format(pid))    	# we need to delete the pid file
     r.cmd('sudo /usr/lib/frr/zebra --daemon --config_file {} --pid_file {} --socket {}'.format(config, pid, zsock))
 
 def stop_zebra(r : Node):
@@ -216,9 +216,10 @@ def stop_zebra(r : Node):
     f = open(pidfile)
     pid = int(f.readline())
     zsock=  dir + 'zserv.api'
-    r.cmd('sudo kill {}'.format(pid))
-    r.cmd('sudo rm {}'.format(zsock))
-   
+    r.cmd('kill {}'.format(pid))
+    r.cmd('rm {}'.format(zsock))
+ 
+    
 # not used here 
 def start_ripd(r):
     name = '{}'.format(r)
@@ -234,7 +235,7 @@ def stop_ripd(r):
     pidfile =  dir + 'ripd.pid'
     f = open(pidfile)
     pid = int(f.readline())
-    r.cmd('sudo kill {}'.format(pid))
+    r.cmd('kill {}'.format(pid))
 
 def start_bgpd(r : Node):
     name = '{}'.format(r)
@@ -242,16 +243,16 @@ def start_bgpd(r : Node):
     config = dir + 'bgpd.conf'
     zsock  = dir + 'zserv.api'
     pid    = dir + 'bgpd.pid'
-    r.cmd('sudo /usr/lib/frr/bgpd --daemon --config_file {} --pid_file {} --socket {}'.format(config, pid, zsock))
-    
+    r.cmd('sudo /usr/lib/frr/bgpd --daemon --config_file {} --pid_file {}  --socket {}'.format(config, pid, zsock))
+     
 def stop_bgpd(r : Node):
     name = '{}'.format(r)
     dir='{}/{}/'.format(DIRPREFIX, name)
     pidfile =  dir + 'bgpd.pid'
     f = open(pidfile)
     pid = int(f.readline())
-    r.cmd('sudo kill {}'.format(pid))
-
+    r.cmd('kill {}'.format(pid))
+    
 
 # For some examples we need to disable the default blocking of forwarding of packets with no reverse path
 def rp_disable(host : Node):

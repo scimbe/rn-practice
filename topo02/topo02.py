@@ -1,13 +1,6 @@
 #!/usr/bin/python
 
 from mininet.net import Mininet
-from mininet.node import Node, OVSKernelSwitch, Controller
-from mininet.link import TCLink
-from mininet.log import setLogLevel
-from mininet.cli import CLI
-
-
-from mininet.net import Mininet
 from mininet.node import Node, OVSKernelSwitch, Controller, RemoteController
 #from mininet.node import Node, Host, OVSSwitch, OVSKernelSwitch, Controller, RemoteController, DefaultController
 from mininet.cli import CLI
@@ -94,8 +87,7 @@ def setup_route(net):
                   # for z in range(1,N+1):
                   #	if z < (i):
                   #	    r.cmd('ip route add 10.0.{}.0/24 via 10.0.{}.2 dev {}'.format((z-1), (i), if1name)) 
-                  r.cmd('ip route add 10.0.{}.0/24 via 10.0.{}.2 dev {}'.format((10*(k)), (i), if1name))
-        
+                  r.cmd('ip route add 10.0.{}.0/24 via 10.0.{}.2 dev {}'.format((10*(k)), (i), if1name))  
         
 def run():
     rtopo = RTopo()

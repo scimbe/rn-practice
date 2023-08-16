@@ -1,3 +1,4 @@
+### General
 Dynamic setup of a much bigger network
 ```
     h0--s1--r1---r2----s2---h3
@@ -5,4 +6,5 @@ Dynamic setup of a much bigger network
         h1             h2   
 ```
 
+### History
 Added Arp Spoofing

@@ -861,7 +861,7 @@ class Router(Node):
 #           
             os.chown(path, uid, gid)  
             self.cmd('{0} {1} --config_file ./{3}/zebra.conf --pid_file ./{3}/zebra.conf > ./{3}/zebra.out 2> ./{3}/zebra.err &'.format(
-                 zebra_path, zebra_option, self.logdir,
+                 zebra_path, zebra_option, self.logdir,self.name
             ))
             self.waitOutput()
             logger.debug('{}: {} zebra started'.format(self, self.routertype))

@@ -602,7 +602,7 @@ class LinuxRouter(Node):
         super(LinuxRouter, self).config(**params)
         # Enable forwarding on the router
         assert_sysctl(self, 'net.ipv4.ip_forward', 1)
-        assert_sysctl(self, 'net.ipv6.conf.all.forwarding', 1)
+        #assert_sysctl(self, 'net.ipv6.conf.all.forwarding', 1)
     def terminate(self):
         """
         Terminate generic LinuxRouter Mininet instance

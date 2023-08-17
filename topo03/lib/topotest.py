@@ -722,7 +722,7 @@ class Router(Node):
             if wait and numRunning > 0:
                 sleep(2, '{}: waiting for daemons stopping'.format(self.name))
                 # 2nd round of kill if daemons didn't exit
-                for d in StringIO.(rundaemons):
+                for d in StringIO(rundaemons):
                     daemonpid = self.cmd('cat %s' % d.rstrip()).rstrip()
                     if (daemonpid.isdigit() and pid_exists(int(daemonpid))):
                         logger.info('{}: killing {}'.format(

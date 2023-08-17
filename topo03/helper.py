@@ -7,13 +7,16 @@
 
 import os
 import socket
+import pwd
+import grp
+
 from pathlib import Path
 from mininet.net import Mininet
 from mininet.node import Node
 from mininet.link import Link, Intf
 from typing import List, Dict, Tuple, Union
 
-DIRPREFIX='.'
+DIRPREFIX='./'
 
 OVERWRITE=True
 
@@ -192,7 +195,11 @@ def ip(subnet : int ,host : int ,prefix=None):
 def mkdir_if_necessary(dir : str):
     #if path.isdir(dir): return
     Path(dir).mkdir(parents=True, exist_ok=True)
-    os.chmod(dir, 0o666)
+    os.chmod(dir, 0o777)
+    uid = pwd.getpwnam("mininet").pw_uid
+    gid = grp.getgrnam("mininet").gr_gid
+#    path = '/tmp/f.txt'
+    os.chown(dir, uid, gid) 
 
 # workaround for the fact that Python modules do not share global variables
 def setdirprefix(dp : str):

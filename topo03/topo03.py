@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# copyright 2021 Peter Dordal
+# copyright 2021 Peter Dordal and 2023 Martin Becke
 # licensed under the Apache 2.0 license
 # type hinting passes mypy, except for the imported modules
 
@@ -207,7 +207,7 @@ def start_zebra(r : Node):
     zsock=  dir + 'zserv.api'
     # r.cmd('> {}'.format(log))			# this creates the file with the wrong permissions
     r.cmd('rm -f {}'.format(pid))    	# we need to delete the pid file
-    r.cmd('sudo /usr/lib/frr/zebra --daemon --config_file {} --pid_file {} --socket {}'.format(config, pid, zsock))
+    r.cmd('/usr/lib/frr/zebra --daemon --config_file {} --pid_file {} --socket {}'.format(config, pid, zsock))
 
 def stop_zebra(r : Node):
     name = '{}'.format(r)
@@ -227,7 +227,7 @@ def start_ripd(r):
     config = dir + 'ripd.conf'
     zsock  = dir + 'zserv.api'
     pid    = dir + 'ripd.pid'
-    r.cmd('sudo /usr/lib/frr/ripd --daemon --config_file {} --pid_file {} --socket {}'.format(config, pid, zsock))
+    r.cmd('/usr/lib/frr/ripd --daemon --config_file {} --pid_file {} --socket {}'.format(config, pid, zsock))
 
 def stop_ripd(r):
     name = '{}'.format(r)
@@ -243,7 +243,7 @@ def start_bgpd(r : Node):
     config = dir + 'bgpd.conf'
     zsock  = dir + 'zserv.api'
     pid    = dir + 'bgpd.pid'
-    r.cmd('sudo /usr/lib/frr/bgpd --daemon --config_file {} --pid_file {}  --socket {}'.format(config, pid, zsock))
+    r.cmd('/usr/lib/frr/bgpd --daemon --config_file {} --pid_file {}  --socket {}'.format(config, pid, zsock))
      
 def stop_bgpd(r : Node):
     name = '{}'.format(r)
@@ -262,7 +262,6 @@ def rp_disable(host : Node):
     for iface in ifacelist:
        if iface != 'lo': host.cmd('sysctl net.ipv4.conf.{}.rp_filter=0'.format(iface))
     #print 'host', host, 'iface list:',  ifacelist
-
 
 setLogLevel('debug')		# or 'info'
 run()

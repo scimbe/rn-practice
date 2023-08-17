@@ -852,7 +852,7 @@ class Router(Node):
             zebra_path = os.path.join(self.daemondir, 'zebra')
             zebra_option = self.daemons_options['zebra']
             logger.info('{0} {1} --config_file ./{3}/zebra.conf --pid_file ./{3}/zebra.conf > ./{3}/zebra.out 2> ./{3}/zebra.err &'.format(
-                 zebra_path, zebra_option, self.logdir,
+                 zebra_path, zebra_option, self.logdir,self.name
             ))
             path = './{0}'.format(self.name)
             os.chmod(path, 0o777)

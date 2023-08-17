@@ -368,6 +368,6 @@ if __name__ == '__main__':
 
     setLogLevel('info')
     # To suppress tracebacks, either use the following pytest call or add "--tb=no" to cli
-    retval = pytest.main(["-s", "--tb=no"])
-    # retval = pytest.main(["-s"])
+    # retval = pytest.main(["-s", "--tb=no"])
+    retval = pytest.main(["-s"])
     sys.exit(retval)

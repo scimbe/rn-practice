@@ -29,6 +29,8 @@ import re
 import sys
 import functools
 import glob
+import pwd
+import grp
 try:
     from StringIO import StringIO ## for Python 2
 except ImportError:
@@ -849,11 +851,17 @@ class Router(Node):
         if self.daemons['zebra'] == 1:
             zebra_path = os.path.join(self.daemondir, 'zebra')
             zebra_option = self.daemons_options['zebra']
-            logger.info('echo {0} {1} > zebra.out 2> zebra.err &'.format(
-                 zebra_path, zebra_option, self.logdir, self.name
+            logger.info('{0} {1} --config_file ./{3}/zebra.conf --pid_file ./{3}/zebra.conf > ./{3}/zebra.out 2> ./{3}/zebra.err &'.format(
+                 zebra_path, zebra_option, self.logdir,
             ))
-            self.cmd('{0} {1} > zebra.out 2> zebra.err &'.format(
-                 zebra_path, zebra_option, self.logdir, self.name
+            path = './{0}'.format(self.name)
+            os.chmod(path, 0o777)
+            uid = pwd.getpwnam("mininet").pw_uid
+            gid = grp.getgrnam("mininet").gr_gid
+#           
+            os.chown(path, uid, gid)  
+            self.cmd('{0} {1} --config_file ./{3}/zebra.conf --pid_file ./{3}/zebra.conf > ./{3}/zebra.out 2> ./{3}/zebra.err &'.format(
+                 zebra_path, zebra_option, self.logdir,
             ))
             self.waitOutput()
             logger.debug('{}: {} zebra started'.format(self, self.routertype))

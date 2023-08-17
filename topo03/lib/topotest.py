@@ -608,7 +608,7 @@ class LinuxRouter(Node):
         Terminate generic LinuxRouter Mininet instance
         """
         set_sysctl(self, 'net.ipv4.ip_forward', 0)
-        set_sysctl(self, 'net.ipv6.conf.all.forwarding', 0)
+        #set_sysctl(self, 'net.ipv6.conf.all.forwarding', 0)
         super(LinuxRouter, self).terminate()
 
 class Router(Node):
@@ -672,7 +672,7 @@ class Router(Node):
 
         # Enable forwarding on the router
         assert_sysctl(self, 'net.ipv4.ip_forward', 1)
-        assert_sysctl(self, 'net.ipv6.conf.all.forwarding', 1)
+        #assert_sysctl(self, 'net.ipv6.conf.all.forwarding', 1)
         # Enable coredumps
         assert_sysctl(self, 'kernel.core_uses_pid', 1)
         assert_sysctl(self, 'fs.suid_dumpable', 1)
@@ -694,7 +694,7 @@ class Router(Node):
         #     self.waitOutput()
         # Disable forwarding
         set_sysctl(self, 'net.ipv4.ip_forward', 0)
-        set_sysctl(self, 'net.ipv6.conf.all.forwarding', 0)
+        #set_sysctl(self, 'net.ipv6.conf.all.forwarding', 0)
         super(Router, self).terminate()
         os.system('chmod -R go+rw /tmp/topotests')
 

@@ -860,7 +860,7 @@ class Router(Node):
             gid = grp.getgrnam("mininet").gr_gid
             self.cmd('pwd');
             os.chown(path, uid, gid)  
-            self.cmd('{0} {1} --config_file zebra.conf --pid_file zebra.pid --log  zebra.log &'.format(
+            self.cmd('{0} {1} --config_file ./zebra.conf --pid_file ./zebra.pid --log  ./zebra.log &'.format(
                  zebra_path, zebra_option, self.logdir,self.name
             ))
             self.waitOutput()

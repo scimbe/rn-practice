@@ -858,7 +858,7 @@ class Router(Node):
             os.chmod(path, 0o777)
             uid = pwd.getpwnam("mininet").pw_uid
             gid = grp.getgrnam("mininet").gr_gid
-#           
+            self.cmd('pwd');
             os.chown(path, uid, gid)  
             self.cmd('{0} {1} --config_file ./{3}/zebra.conf --pid_file ./{3}/zebra.pid --log  ./{3}/zebra.log &'.format(
                  zebra_path, zebra_option, self.logdir,self.name

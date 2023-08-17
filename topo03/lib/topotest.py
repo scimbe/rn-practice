@@ -851,7 +851,7 @@ class Router(Node):
         if self.daemons['zebra'] == 1:
             zebra_path = os.path.join(self.daemondir, 'zebra')
             zebra_option = self.daemons_options['zebra']
-            logger.info('{0} {1} --config_file ./{3}/zebra.conf --pid_file ./{3}/zebra.pid --log  ./{3}/zebra.log &'.format(
+            logger.info('{0} {1} --config_file zebra.conf --pid_file zebra.pid --log zebra.log &'.format(
                  zebra_path, zebra_option, self.logdir,self.name
             ))
             path = './{0}'.format(self.name)
@@ -860,7 +860,7 @@ class Router(Node):
             gid = grp.getgrnam("mininet").gr_gid
             self.cmd('pwd');
             os.chown(path, uid, gid)  
-            self.cmd('{0} {1} --config_file ./{3}/zebra.conf --pid_file ./{3}/zebra.pid --log  ./{3}/zebra.log &'.format(
+            self.cmd('{0} {1} --config_file zebra.conf --pid_file zebra.pid --log  zebra.log &'.format(
                  zebra_path, zebra_option, self.logdir,self.name
             ))
             self.waitOutput()

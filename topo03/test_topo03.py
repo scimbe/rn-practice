@@ -152,7 +152,7 @@ def test_router_running():
         assert fatal_error == "", fatal_error
 
     # For debugging after starting FRR/Quagga daemons, uncomment the next line
-    # CLI(net)
+    CLI(net)
 
 
 def test_converge_protocols():

@@ -366,7 +366,7 @@ def test_shutdown_check_stderr():
 
 if __name__ == '__main__':
 
-    setLogLevel('info')
+    setLogLevel('debug')
     # To suppress tracebacks, either use the following pytest call or add "--tb=no" to cli
     # retval = pytest.main(["-s", "--tb=no"])
     retval = pytest.main(["-s"])

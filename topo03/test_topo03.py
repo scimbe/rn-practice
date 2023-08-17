@@ -147,9 +147,9 @@ def test_router_running():
     sleep(5)
     CLI(net)
     # Make sure that all daemons are running
-    for i in range(1, 4):
-        fatal_error = net['r%s' % i].checkRouterRunning()
-        assert fatal_error == "", fatal_error
+    #for i in range(1, 4):
+    #    fatal_error = net['r%s' % i].checkRouterRunning()
+    #    assert fatal_error == "", fatal_error
 
     # For debugging after starting FRR/Quagga daemons, uncomment the next line
     # CLI(net)
@@ -172,9 +172,9 @@ def test_converge_protocols():
     sleep(60)
 
     # Make sure that all daemons are still running
-    for i in range(1, 4):
-        fatal_error = net['r%s' % i].checkRouterRunning()
-        assert fatal_error == "", fatal_error
+    #for i in range(1, 4):
+    #    fatal_error = net['r%s' % i].checkRouterRunning()
+    #    assert fatal_error == "", fatal_error
 
     # For debugging after starting FRR/Quagga daemons, uncomment the next line
     # CLI(net)

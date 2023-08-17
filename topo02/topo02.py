@@ -136,7 +136,7 @@ def run():
     setup_route(net)
 
     setup_webServerOnH1(net)
-
+    makeTerm((net['r1']))
     makeTerm((net['h0']))
     makeTerm((net['h1'])) 
     makeTerm((net['h{}'.format(N)]))

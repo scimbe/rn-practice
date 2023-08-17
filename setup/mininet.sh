@@ -1,4 +1,4 @@
 sudo apt update
-sudo apt install dnsmasq netsurf whois nmap snapd curl arping dsniff frr
+sudo apt install dnsmasq netsurf whois nmap snapd curl arping dsniff frr iperf3
 sudo snap install searchsploit
 pip3 install pytest

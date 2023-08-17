@@ -168,13 +168,15 @@ def run():
     for r in BGPnodelist:
         r.cmd('/usr/sbin/sshd')		# not really needed
         start_zebra(r)
-        start_bgpd(r)
+        #start_bgpd(r)
+        start_ripd(r)
     
     CLI( net)
 
     for r in BGPnodelist:
         stop_zebra(r)
-        stop_bgpd(r)
+        #stop_bgpd(r)
+        stop_ripd(r)
         
     net.stop()
 

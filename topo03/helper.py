@@ -196,8 +196,8 @@ def mkdir_if_necessary(dir : str):
     #if path.isdir(dir): return
     Path(dir).mkdir(parents=True, exist_ok=True)
     os.chmod(dir, 0o777)
-    uid = pwd.getpwnam("mininet").pw_uid
-    gid = grp.getgrnam("mininet").gr_gid
+    uid = pwd.getpwnam("root").pw_uid
+    gid = grp.getgrnam("root").gr_gid
 #    path = '/tmp/f.txt'
     os.chown(dir, uid, gid) 
 

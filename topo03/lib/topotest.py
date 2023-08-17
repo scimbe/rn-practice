@@ -849,6 +849,9 @@ class Router(Node):
         if self.daemons['zebra'] == 1:
             zebra_path = os.path.join(self.daemondir, 'zebra')
             zebra_option = self.daemons_options['zebra']
+            logger.info('echo {0} {1} > zebra.out 2> zebra.err &'.format(
+                 zebra_path, zebra_option, self.logdir, self.name
+            ))
             self.cmd('{0} {1} > zebra.out 2> zebra.err &'.format(
                  zebra_path, zebra_option, self.logdir, self.name
             ))

@@ -64,9 +64,10 @@ class NetworkTopo(Topo):
         #
         # Setup Main Router
         router[1] = topotest.addRouter(self, 'r1')
+        #router[4] = topotest.addRouter(self, 'r1')
         #
         # Setup RIP Routers
-        for i in range(2, 4):
+        for i in range(2, 5):
             router[i] = topotest.addRouter(self, 'r%s' % i)
         #
         # Setup Switches
@@ -89,7 +90,9 @@ class NetworkTopo(Topo):
         # switch 4 is stub on remote RIP router
         switch[4] = self.addSwitch('sw4', cls=topotest.LegacySwitch)
         self.addLink(switch[4], router[3], intfName2='r3-eth0')
-
+        
+        self.addLink(switch[2], router[4], intfName2='r4-eth0')
+        self.addLink(switch[3], router[4], intfName2='r4-eth1')
 #####################################################
 ##
 ##   Tests starting
@@ -100,14 +103,14 @@ def startRIPD(net):
     thisDir = os.path.dirname(os.path.realpath(__file__))
 
     print("******** Start RIPD *************\n")   
-    for i in range(1, 4):
+    for i in range(1, 5):
         net['r%s' % i].startRIPD(thisDir)
 
 def startBGPD(net):
     thisDir = os.path.dirname(os.path.realpath(__file__))
 
     print("******** Start BGP *************\n")   
-    for i in range(1, 4):
+    for i in range(1, 5):
         net['r%s' % i].startBGPD(thisDir)
   
           
@@ -126,7 +129,7 @@ def run():
 
     # Starting Routers
     #
-    for i in range(1, 4):
+    for i in range(1, 5):
         net['r%s' % i].startRouter(thisDir)
     print("******** Router up and running *************\n")   
     CLI(net) 
@@ -136,7 +139,7 @@ def run():
     print("\n\n** %s: Shutdown Topology")
     print("******************************************\n")
 
-    for i in range(1, 4):
+    for i in range(1, 5):
         net['r%s' % i].stopRouter()
     # End - Shutdown network
     net.stop()

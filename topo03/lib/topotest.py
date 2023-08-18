@@ -755,34 +755,8 @@ class Router(Node):
                 return False
         return True
 
-    def loadConf(self, daemon, source=None, param=None):
-        # print "Daemons before:", self.daemons
-        if daemon in self.daemons.keys():
-            self.daemons[daemon] = 1
-            if param is not None:
-                self.daemons_options[daemon] = param
-            if source is None:
-                self.cmd('touch /etc/%s/%s.conf' % (self.routertype, daemon))
-                self.waitOutput()
-            else:
-                self.cmd('cp %s /etc/%s/%s.conf' % (source, self.routertype, daemon))
-                self.waitOutput()
-            self.cmd('chmod 640 /etc/%s/%s.conf' % (self.routertype, daemon))
-            self.waitOutput()
-            self.cmd('chown %s:%s /etc/%s/%s.conf' % (self.routertype, self.routertype, self.routertype, daemon))
-            self.waitOutput()
-            if (daemon == 'zebra') and (self.daemons['staticd'] == 0):
-                # Add staticd with zebra - if it exists
-                staticd_path = os.path.join(self.daemondir, 'staticd')
-                if os.path.isfile(staticd_path):
-                    self.daemons['staticd'] = 1
-                    self.daemons_options['staticd'] = ''
-                    # Auto-Started staticd has no config, so it will read from zebra config
-        else:
-            logger.info('No daemon {} known'.format(daemon))
-        # print "Daemons after:", self.daemons
 
-    def startRouter(self, tgen=None):
+    def startRouter(self,source=None, tgen=None):
         # Disable integrated-vtysh-config
         self.cmd('echo "no service integrated-vtysh-config" >> /etc/%s/vtysh.conf' % self.routertype)
         self.cmd('chown %s:%svty /etc/%s/vtysh.conf' % (self.routertype, self.routertype, self.routertype))
@@ -793,34 +767,7 @@ class Router(Node):
         map(os.remove, glob.glob('{}/{}/*.dmp'.format(self.logdir, self.name)))
         # Remove IP addresses from OS first - we have them in zebra.conf
         self.removeIPs()
-        # If ldp is used, check for LDP to be compiled and Linux Kernel to be 4.5 or higher
-        # No error - but return message and skip all the tests
-        if self.daemons['ldpd'] == 1:
-            ldpd_path = os.path.join(self.daemondir, 'ldpd')
-            if not os.path.isfile(ldpd_path):
-                logger.info("LDP Test, but no ldpd compiled or installed")
-                return "LDP Test, but no ldpd compiled or installed"
-
-            if version_cmp(platform.release(), '4.5') < 0:
-                logger.info("LDP Test need Linux Kernel 4.5 minimum")
-                return "LDP Test need Linux Kernel 4.5 minimum"
-            # Check if have mpls
-            if tgen != None:
-                self.hasmpls = tgen.hasmpls
-                if self.hasmpls != True:
-                    logger.info("LDP/MPLS Tests will be skipped, platform missing module(s)")
-            else:
-                # Test for MPLS Kernel modules available
-                self.hasmpls = False
-                if not module_present('mpls-router'):
-                    logger.info('MPLS tests will not run (missing mpls-router kernel module)')
-                elif not module_present('mpls-iptunnel'):
-                    logger.info('MPLS tests will not run (missing mpls-iptunnel kernel module)')
-                else:
-                    self.hasmpls = True
-            if self.hasmpls != True:
-                return "LDP/MPLS Tests need mpls kernel modules"
-        self.cmd('echo 100000 > /proc/sys/net/mpls/platform_labels')
+   
 
         if self.daemons['eigrpd'] == 1:
             eigrpd_path = os.path.join(self.daemondir, 'eigrpd')
@@ -834,48 +781,47 @@ class Router(Node):
                 logger.info("BFD Test, but no bfdd compiled or installed")
                 return "BFD Test, but no bfdd compiled or installed"
 
-        self.restartRouter()
+        self.restartRouter(source)
         return ""
-
-    def restartRouter(self):
+    def startStartRIPD(self, source=None):
+        self.cmd('cd {}/{}'.format(self.logdir, self.name))
+        self.cmd('umask 000')
+        ripd_path = os.path.join(self.daemondir, 'ripd')
+        self.cmd('{0} --config_file ./ripd.conf --pid_file ./ripd.pid &'.format(ripd_path))
+                
+    def restartRouter(self, source=None):
         # Starts actual daemons without init (ie restart)
         # cd to per node directory
         self.cmd('cd {}/{}'.format(self.logdir, self.name))
         self.cmd('umask 000')
         #Re-enable to allow for report per run
         self.reportCores = True
+        
         if self.version == None:
             self.version = self.cmd(os.path.join(self.daemondir, 'bgpd')+' -v').split()[2]
             logger.info('{}: running version: {}'.format(self.name,self.version))
+            
         # Start Zebra first
-        if self.daemons['zebra'] == 1:
-            zebra_path = os.path.join(self.daemondir, 'zebra')
-            zebra_option = self.daemons_options['zebra']
-            logger.info('{0} {1} --config_file ./zebra.conf --pid_file /tmp/zebra_{3}.pid --log  /tmp/zebra_{2}.log &'.format(
-                 zebra_path, zebra_option, self.logdir,self.name
-            ))
-            path = './'.format(self.name)
-            os.chmod(path, 0o777)
-            uid = pwd.getpwnam("mininet").pw_uid
-            gid = grp.getgrnam("mininet").gr_gid
-            self.cmd('pwd');
-            os.chown(path, uid, gid)  
-            self.cmd('{0} {1} --config_file ./zebra.conf --pid_file /tmp/zebra_{3}.pid --log  /tmp/zebra_{2}.log &'.format(
-                 zebra_path, zebra_option, self.logdir,self.name
-            ))
-            self.waitOutput()
-            logger.debug('{}: {} zebra started'.format(self, self.routertype))
-            sleep(1, '{}: waiting for zebra to start'.format(self.name))
-        # Start staticd next if required
-        if self.daemons['staticd'] == 1:
-            staticd_path = os.path.join(self.daemondir, 'staticd')
-            staticd_option = self.daemons_options['staticd']
-            self.cmd('{0} {1} > staticd.out 2> staticd.err &'.format(
-                 staticd_path, staticd_option, self.logdir, self.name
-            ))
-            self.waitOutput()
-            logger.debug('{}: {} staticd started'.format(self, self.routertype))
-            sleep(1, '{}: waiting for staticd to start'.format(self.name))
+        zebra_path = os.path.join(self.daemondir, 'zebra')
+     
+        path = './'.format(self.name)
+        os.chmod(path, 0o777)
+        uid = pwd.getpwnam("frr").pw_uid
+        gid = grp.getgrnam("frr").gr_gid
+        self.cmd('pwd');
+        os.chown(path, uid, gid)  
+        
+        self.cmd('cp {0}/{1}/zebra.conf ./'.format(source,self.name))
+        self.cmd('cp {0}/{1}/ripd.conf ./'.format(source,self.name))
+         
+        self.cmd('{0} --config_file ./zebra.conf --daemon --pid_file ./zebra.pid &'.format(
+         zebra_path
+        ))
+        self.waitOutput()
+        logger.debug('{}: {} zebra started'.format(self, self.routertype))
+        
+
+       
        # Fix Link-Local Addresses
         # Somehow (on Mininet only), Zebra removes the IPv6 Link-Local addresses on start. Fix this
         self.cmd('for i in `ls /sys/class/net/` ; do mac=`cat /sys/class/net/$i/address`; IFS=\':\'; set $mac; unset IFS; ip address add dev $i scope link fe80::$(printf %02x $((0x$1 ^ 2)))$2:${3}ff:fe$4:$5$6/64; done')
@@ -896,6 +842,8 @@ class Router(Node):
         return self.getLog('out', daemon)
     def getLog(self, log, daemon):
         return self.cmd('cat {}/{}/{}.{}'.format(self.logdir, self.name, daemon, log))
+
+
 
     def checkRouterCores(self, reportLeaks=True, reportOnce=False):
         if reportOnce and not self.reportCores:
@@ -935,86 +883,7 @@ class Router(Node):
             self.reportCores = False
         return traces
 
-    def checkRouterRunning(self):
-        "Check if router daemons are running and collect crashinfo they don't run"
-
-        global fatal_error
-
-        daemonsRunning = self.cmd('vtysh -c "show log" | grep "Logging configuration for"')
-        # Look for AddressSanitizer Errors in vtysh output and append to /tmp/AddressSanitzer.txt if found
-        if checkAddressSanitizerError(daemonsRunning, self.name, "vtysh"):
-            return "%s: vtysh killed by AddressSanitizer" % (self.name)
-
-        for daemon in self.daemons:
-            if (self.daemons[daemon] == 1) and not (daemon in daemonsRunning):
-                sys.stderr.write("%s: Daemon %s not running\n" % (self.name, daemon))
-                if daemon == "staticd":
-                    sys.stderr.write("You may have a copy of staticd installed but are attempting to test against\n")
-                    sys.stderr.write("a version of FRR that does not have staticd, please cleanup the install dir\n")
-
-                # Look for core file
-                corefiles = glob.glob('{}/{}/{}_core*.dmp'.format(
-                    self.logdir, self.name, daemon))
-                if (len(corefiles) > 0):
-                    daemon_path = os.path.join(self.daemondir, daemon)
-                    backtrace = subprocess.check_output([
-                        "gdb {} {} --batch -ex bt 2> /dev/null".format(daemon_path, corefiles[0])
-                    ], shell=True)
-                    sys.stderr.write("\n%s: %s crashed. Core file found - Backtrace follows:\n" % (self.name, daemon))
-                    sys.stderr.write("%s\n" % backtrace)
-                else:
-                    # No core found - If we find matching logfile in /tmp, then print last 20 lines from it.
-                    if os.path.isfile('{}/{}/{}.log'.format(self.logdir, self.name, daemon)):
-                        log_tail = subprocess.check_output([
-                            "tail -n20 {}/{}/{}.log 2> /dev/null".format(
-                                self.logdir, self.name, daemon)
-                            ], shell=True)
-                        sys.stderr.write("\nFrom %s %s %s log file:\n" % (self.routertype, self.name, daemon))
-                        sys.stderr.write("%s\n" % log_tail)
-
-                # Look for AddressSanitizer Errors and append to /tmp/AddressSanitzer.txt if found
-                if checkAddressSanitizerError(self.getStdErr(daemon), self.name, daemon):
-                    return "%s: Daemon %s not running - killed by AddressSanitizer" % (self.name, daemon)
-
-                return "%s: Daemon %s not running" % (self.name, daemon)
-        return ""
-
-    def checkRouterVersion(self, cmpop, version):
-        """
-        Compares router version using operation `cmpop` with `version`.
-        Valid `cmpop` values:
-        * `>=`: has the same version or greater
-        * '>': has greater version
-        * '=': has the same version
-        * '<': has a lesser version
-        * '<=': has the same version or lesser
-
-        Usage example: router.checkRouterVersion('>', '1.0')
-        """
-
-        # Make sure we have version information first
-        if self.version == None:
-            self.version = self.cmd(os.path.join(self.daemondir, 'bgpd')+' -v').split()[2]
-            logger.info('{}: running version: {}'.format(self.name,self.version))
-
-        rversion = self.version
-        if rversion is None:
-            return False
-
-        result = version_cmp(rversion, version)
-        if cmpop == '>=':
-            return result >= 0
-        if cmpop == '>':
-            return result > 0
-        if cmpop == '=':
-            return result == 0
-        if cmpop == '<':
-            return result < 0
-        if cmpop == '<':
-            return result < 0
-        if cmpop == '<=':
-            return result <= 0
-
+   
     def get_ipv6_linklocal(self):
         "Get LinkLocal Addresses from interfaces"
 

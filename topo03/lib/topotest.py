@@ -74,9 +74,9 @@ def get_test_logdir(node=None, init=False):
     node:  when set, adds the node specific log directory to the init dir
     init:  when set, initializes the log directory and fixes path permissions
     """
-    cur_test = os.environ['PYTEST_CURRENT_TEST']
+    cur_test = 'test_topo03'
 
-    ret = '/tmp/topotests/' + cur_test[0:cur_test.find(".py")].replace('/','.')
+    ret = '/tmp/topotests/' + cur_test
     if node != None:
         dir = ret + "/" + node
     if init:
@@ -783,7 +783,7 @@ class Router(Node):
 
         self.restartRouter(source)
         return ""
-    def startStartRIPD(self, source=None):
+    def startRIPD(self, source=None):
         self.cmd('cd {}/{}'.format(self.logdir, self.name))
         self.cmd('umask 000')
         ripd_path = os.path.join(self.daemondir, 'ripd')

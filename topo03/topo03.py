@@ -98,17 +98,22 @@ class NetworkTopo(Topo):
 ##
 #####################################################
 
-def setup_module(module):
-    global topo, net
+def startRIPD(net):
+    thisDir = os.path.dirname(os.path.realpath(__file__))
 
-    print("\n\n** %s: Setup Topology" % module.__name__)
+    print("******** Start RIPD *************\n")   
+    for i in range(1, 4):
+        net['r%s' % i].startRIPD(thisDir)
+        
+        
+def run():
+    topo = NetworkTopo()
     print("******************************************\n")
 
     print("Cleanup old Mininet runs")
     os.system('sudo mn -c > /dev/null 2>&1')
 
     thisDir = os.path.dirname(os.path.realpath(__file__))
-    topo = NetworkTopo()
 
     net = Mininet(controller=None, topo=topo)
     net.start()
@@ -117,70 +122,19 @@ def setup_module(module):
     #
     for i in range(1, 4):
         net['r%s' % i].startRouter(thisDir)
+    print("******** Router up and running *************\n")   
+    CLI(net) 
+    startRIPD(net)
 
-
-
-def teardown_module(module):
-    global net
-
-    print("\n\n** %s: Shutdown Topology" % module.__name__)
+    CLI(net)
+    print("\n\n** %s: Shutdown Topology")
     print("******************************************\n")
 
+    for i in range(1, 4):
+        net['r%s' % i].stopRouter()
     # End - Shutdown network
     net.stop()
 
-
-def test_router_running():
-    global fatal_error
-    global net
-
-    # Skip if previous fatal error condition is raised
-    if (fatal_error != ""):
-        pytest.skip(fatal_error)
-
-    print("\n\n** BECKE: The system is up and running! Remember you are working in /tmp/topotests/")
-    print("******************************************\n")
-    print("No routes are up time to setup some sniffer to watch the magic\n")
-    CLI(net)
-    for i in range(1, 4):
-        net['r%s' % i].startStartRIPD(thisDir)
-    print("Routes come up, but it needs some time\n")
-    CLI(net)
-
-
-
-
-
-def test_shutdown_check_stderr():
-    global fatal_error
-    global net
-
-    # Skip if previous fatal error condition is raised
-    if (fatal_error != ""):
-        pytest.skip(fatal_error)
-
-    if os.environ.get('TOPOTESTS_CHECK_STDERR') is None:
-        pytest.skip('Skipping test for Stderr output and memory leaks')
-
-    thisDir = os.path.dirname(os.path.realpath(__file__))
-
-    print("\n\n** Verifing unexpected STDERR output from daemons")
-    print("******************************************\n")
-
-    net['r1'].stopRouter()
-
-    log = net['r1'].getStdErr('ripd')
-    if log:
-        print("\nRIPd StdErr Log:\n" + log)
-    log = net['r1'].getStdErr('zebra')
-    if log:
-        print("\nZebra StdErr Log:\n" + log)
-
-
 if __name__ == '__main__':
-
-    setLogLevel('debug')
-    # To suppress tracebacks, either use the following pytest call or add "--tb=no" to cli
-    # retval = pytest.main(["-s", "--tb=no"])
-    retval = pytest.main(["-s"])
-    sys.exit(retval)
+    setLogLevel('info')
+    run()

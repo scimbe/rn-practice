@@ -90,8 +90,6 @@ class NetworkTopo(Topo):
         switch[4] = self.addSwitch('sw4', cls=topotest.LegacySwitch)
         self.addLink(switch[4], router[3], intfName2='r3-eth0')
 
-
-
 #####################################################
 ##
 ##   Tests starting
@@ -104,7 +102,15 @@ def startRIPD(net):
     print("******** Start RIPD *************\n")   
     for i in range(1, 4):
         net['r%s' % i].startRIPD(thisDir)
-        
+
+def startBGPD(net):
+    thisDir = os.path.dirname(os.path.realpath(__file__))
+
+    print("******** Start BGP *************\n")   
+    for i in range(1, 4):
+        net['r%s' % i].startBGPD(thisDir)
+  
+          
         
 def run():
     topo = NetworkTopo()
@@ -125,7 +131,7 @@ def run():
     print("******** Router up and running *************\n")   
     CLI(net) 
     startRIPD(net)
-
+    startBGPD(net)
     CLI(net)
     print("\n\n** %s: Shutdown Topology")
     print("******************************************\n")
@@ -136,5 +142,5 @@ def run():
     net.stop()
 
 if __name__ == '__main__':
-    setLogLevel('info')
+    setLogLevel('debug')
     run()

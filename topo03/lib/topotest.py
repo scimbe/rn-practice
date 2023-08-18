@@ -788,6 +788,13 @@ class Router(Node):
         self.cmd('umask 000')
         ripd_path = os.path.join(self.daemondir, 'ripd')
         self.cmd('{0} --config_file ./ripd.conf --pid_file ./ripd.pid &'.format(ripd_path))
+
+    def startBGPD(self, source=None):
+        self.cmd('cd {}/{}'.format(self.logdir, self.name))
+        self.cmd('umask 000')
+        bgpd_path = os.path.join(self.daemondir, 'bgpd')
+        self.cmd('{0} --config_file ./bgpd.conf --pid_file ./bgpd.pid &'.format(bgpd_path))
+	
                 
     def restartRouter(self, source=None):
         # Starts actual daemons without init (ie restart)
@@ -813,7 +820,8 @@ class Router(Node):
         
         self.cmd('cp {0}/{1}/zebra.conf ./'.format(source,self.name))
         self.cmd('cp {0}/{1}/ripd.conf ./'.format(source,self.name))
-         
+        self.cmd('cp {0}/{1}/bgpd.conf ./'.format(source,self.name))
+        
         self.cmd('{0} --config_file ./zebra.conf --daemon --pid_file ./zebra.pid &'.format(
          zebra_path
         ))

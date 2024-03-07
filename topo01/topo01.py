@@ -112,13 +112,13 @@ def topology():
 #    r2.cmd('while true; do rm -f /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc -l 1234 >/tmp/f; done &')
 
 
-    info( '*** Connecting to hw intf: %s \n' % str(interface_name) ) # Testsystem "enp0s5"  #"enp0s5"  # 
-    checkIntf( str(interface_name) )
-    Intf( str(interface_name) , node=s0) 
+    info( '*** Connecting to hw intf: %s \n' % str(interface_name).split('@')[0] ) # Testsystem "enp0s5"  #"enp0s5"  # 
+    checkIntf( str(interface_name).split('@')[0] )
+    Intf( str(interface_name).split('@')[0] , node=s0) 
     s0.cmd('ifconfig s0-eth0 10.0.5.1/24')
     s0.cmd('ip route add 10.0.1.0/24 via 10.0.5.2')
     s0.cmd('echo "1" > /proc/sys/net/ipv4/ip_forward')
-    s0.cmd('iptables -t nat -A POSTROUTING -o ' +  str(interface_name) + ' -j MASQUERADE')
+    s0.cmd('iptables -t nat -A POSTROUTING -o ' +  str(interface_name).split('@')[0] + ' -j MASQUERADE')
 
     info("*** Running CLI\n")
     h1.cmd('dnsmasq --log-queries --no-daemon  --resolv-file=./resolve.conf --addn-hosts=./dnsmasq.hosts 2> dns.log &')

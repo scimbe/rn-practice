@@ -25,6 +25,13 @@ class LinuxRouter(Node):
         self.cmd('sysctl net.ipv4.ip_forward=0')
         super(LinuxRouter, self).terminate()
 
+
+class CustomTCLink(TCLink):
+    def __init__(self, *args, **kwargs):
+        super(CustomTCLink, self).__init__(*args, **kwargs)
+        # R2Q manuell setzen
+        self.cmd('tc qdisc change dev %s root handle 1: htb default 1 r2q 10' % self.intfName)
+        
 # X11-Cookie-Handling
 
 def distribute_x11_cookie(net):
@@ -79,9 +86,19 @@ def topology():
     s0 = net.addSwitch('s0')
 
     info("*** Creating links\n")
-    net.addLink(h1, r1, intfName1='h1-eth1', intfName2='r1-eth0', cls=TCLink, bw=100, delay='10ms',  max_queue_size=1000)
-    net.addLink(r1, r2, intfName1='r1-eth1', intfName2='r2-eth0', cls=TCLink, bw=100, delay='10ms',  max_queue_size=1000)
-    net.addLink(r2, h2, intfName1='r2-eth1', intfName2='h2-eth0', cls=TCLink, bw=100, delay='10ms',  max_queue_size=1000)
+    bw = 100
+    if bw <= 10:
+        max_queue_size = 100
+    elif bw <= 50:
+        max_queue_size = 300
+    else:
+        max_queue_size = 500
+
+
+    net.addLink(h1, r1, intfName1='h1-eth1', intfName2='r1-eth0', cls=CustomTCLink, bw=bw, delay='10ms', max_queue_size=max_queue_size)
+    net.addLink(r1, r2, intfName1='r1-eth1', intfName2='r2-eth0', cls=CustomTCLink, bw=bw, delay='10ms', max_queue_size=max_queue_size)
+    net.addLink(r2, h2, intfName1='r2-eth1', intfName2='h2-eth0', cls=CustomTCLink, bw=bw, delay='10ms', max_queue_size=max_queue_size)
+
     net.addLink(h1, s0, intfName1='h1-eth0', intfName2='s0-eth0')
 
     net.build()

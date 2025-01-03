@@ -32,15 +32,16 @@ fi
 
 log "Prüfen, ob Nameserver $nameserver bereits in $resolv_conf existiert"
 
-if grep -qxF "$nameserver" "$resolv_conf"; then
-    log "Nameserver ist bereits vorhanden. Er wird an den Anfang der Liste verschoben."
-    sudo sed -i "/$nameserver/d" "$resolv_conf"
-    echo "$nameserver" | sudo tee -a "$resolv_conf" > /dev/null
-else
-    log "Nameserver wird hinzugefügt und an den Anfang der Liste gesetzt."
-fi
+# Backup der aktuellen Datei
+sudo cp /etc/resolv.conf "$backup_resolv_conf"
 
-sudo sed -i "1i$nameserver" "$resolv_conf"
+# Nameserver einfügen, wenn nicht vorhanden oder an den Anfang verschieben
+sudo awk -v ns="$nameserver" '
+BEGIN {print ns}
+!seen[$0]++ && $0 != ns {print}
+' "$backup_resolv_conf" | sudo tee /etc/resolv.conf > /dev/null
+
+log "Nameserver wurde an den Anfang der Liste gesetzt."
 
 log "Mininet wird bereinigt"
 sudo mn -c || log "Warnung: Mininet Cleanup fehlgeschlagen"

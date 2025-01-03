@@ -1,34 +1,9 @@
-"""
-Copyright 2023-present Martin Becke 
-# SPDX-License-Identifier: Apache-2.0
-
-Dependencies:
-    Work with this setub base on the mininet image and dnsmasq netsurf whois nmap snapd curl
-    $ sudo apt install dnsmasq netsurf whois nmap snapd curl
-    $ sudo snap install searchsploit
-"""
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# @author Martin Becke scimbe@becke.net
-
-#!/usr/bin/python
-
+import os
 import re
 import sys
+from subprocess import check_output
 
 from sys import exit  # pylint: disable=redefined-builtin
-
 
 from mininet.topo import Topo
 from mininet.net import Mininet
@@ -50,56 +25,72 @@ class LinuxRouter(Node):
         self.cmd('sysctl net.ipv4.ip_forward=0')
         super(LinuxRouter, self).terminate()
 
-def checkIntf( intf ):
+# X11-Cookie-Handling
+
+def distribute_x11_cookie(net):
+    try:
+        display = os.getenv('DISPLAY')
+        if not display:
+            error("DISPLAY variable not set. X11 forwarding might not work.\n")
+            return
+
+        cookie_output = check_output(f"xauth list {display}", shell=True).decode().strip().split()
+        if cookie_output:
+            cookie_value = cookie_output[-1]
+            info(f"X11-Cookie: {cookie_value}\n")
+            for host in net.hosts:
+                host.cmd(f"xauth add {os.uname()[1]}/unix{display} MIT-MAGIC-COOKIE-1 {cookie_value}")
+                info(f"X11-Cookie zu {host.name} hinzugefügt.\n")
+        else:
+            error("Kein X11-Cookie gefunden.\n")
+    except Exception as e:
+        error(f"Fehler beim Verteilen des X11-Cookies: {e}\n")
+
+
+def checkIntf(intf):
     "Make sure intf exists and is not configured."
-    config = quietRun( 'ifconfig %s 2>/dev/null' % intf, shell=True )
+    config = quietRun('ip link show %s 2>/dev/null' % intf, shell=True)
     if not config:
-        error( 'Error:', intf, 'does not exist!\n' )
-        exit( 1 )
-    ips = re.findall( r'\d+\.\d+\.\d+\.\d+', config )
-    if ips:
-        error( 'INFO:', intf, 'has an IP address,'
-               'and is probably in use!\n' )
+        error('Error:', intf, 'does not exist!\n')
+        exit(1)
+    if 'state UP' in config:
+        error('INFO:', intf, 'is up and may already be in use!\n')
         info("!!! Not sure if this is a problem - Should keep an eye on this\n")
 
-def topology():
-    net = Mininet( controller=Controller, link=TCLink)
 
-    with open('interface.txt', 'r') as file:
-        values = file.readlines()
-        interface_name = values[0].rstrip()
-        gateway_address = values[1].rstrip()
+def topology():
+    net = Mininet(controller=Controller, link=TCLink, build=False)
+
+    interface_name = os.getenv('INTERFACE', 'eth0')
+    gateway_address = os.getenv('GATEWAY', '10.0.5.1')
 
     info("*** Adding controller\n")
-    c0 = net.addController( 'c0' )
+    c0 = net.addController('c0')
 
     info("*** Adding hosts\n")
-    h1 = net.addHost( 'h1')
-  
-    h2 = net.addHost( 'h2', ip='10.0.6.2/24', defaultRoute='via 10.0.6.1' )
+    h1 = net.addHost('h1')
+    h2 = net.addHost('h2', ip='10.0.6.2/24', defaultRoute='via 10.0.6.1')
 
     info("*** Adding hosts and routers\n")
     r1 = net.addHost('r1', cls=LinuxRouter)
-
     r2 = net.addHost('r2', cls=LinuxRouter)
 
     info("*** Adding External Interface with Nat\n")
     s0 = net.addSwitch('s0')
-       
-    info("*** Creating links\n")
-    net.addLink( h1, r1, intfName1='h1-eth1', intfName2='r1-eth0', cls=TCLink, bw=100, delay='10ms' )
-    net.addLink( r1, r2, intfName1='r1-eth1', intfName2='r2-eth0', cls=TCLink, bw=100, delay='10ms' )
-    net.addLink( r2, h2, intfName1='r2-eth1', intfName2='h2-eth0', cls=TCLink, bw=100, delay='10ms' )
 
+    info("*** Creating links\n")
+    net.addLink(h1, r1, intfName1='h1-eth1', intfName2='r1-eth0', cls=TCLink, bw=100, delay='10ms')
+    net.addLink(r1, r2, intfName1='r1-eth1', intfName2='r2-eth0', cls=TCLink, bw=100, delay='10ms')
+    net.addLink(r2, h2, intfName1='r2-eth1', intfName2='h2-eth0', cls=TCLink, bw=100, delay='10ms')
     net.addLink(h1, s0, intfName1='h1-eth0', intfName2='s0-eth0')
-    
+
     net.build()
-    
+
     h1.cmd('ifconfig h1-eth0 10.0.5.2/24')
     h1.cmd('ip route add default via 10.0.5.1')
     h1.cmd('ifconfig h1-eth1 10.0.1.2/24')
     h1.cmd('ip route add 10.0.6.0/24 via 10.0.1.1')
-    
+
     r1.cmd('ifconfig r1-eth0 10.0.1.1/24')
     r1.cmd('ifconfig r1-eth1 10.0.4.1/24')
     r1.cmd('ip route add 10.0.6.0/24 via 10.0.4.2')
@@ -107,39 +98,25 @@ def topology():
     r2.cmd('ifconfig r2-eth1 10.0.6.1/24')
     r2.cmd('ifconfig r2-eth0 10.0.4.2/24')
     r2.cmd('ip route add 10.0.1.0/24 via 10.0.4.1')
-
     r2.cmd('/usr/sbin/sshd')
-#    r2.cmd('while true; do rm -f /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc -l 1234 >/tmp/f; done &')
 
-
-    info( '*** Connecting to hw intf: %s \n' % str(interface_name).split('@')[0] ) # Testsystem "enp0s5"  #"enp0s5"  # 
-    checkIntf( str(interface_name).split('@')[0] )
-    Intf( str(interface_name).split('@')[0] , node=s0) 
-    s0.cmd('ifconfig s0-eth0 10.0.5.1/24')
-    s0.cmd('ip route add 10.0.1.0/24 via 10.0.5.2')
+    info('*** Connecting to hw intf: %s \n' % interface_name)
+    checkIntf(interface_name)
+    Intf(interface_name, node=s0)
+    s0.cmd(f'ifconfig s0-eth0 {gateway_address}/24')
     s0.cmd('echo "1" > /proc/sys/net/ipv4/ip_forward')
-    s0.cmd('iptables -t nat -A POSTROUTING -o ' +  str(interface_name).split('@')[0] + ' -j MASQUERADE')
+    s0.cmd(f'iptables -t nat -A POSTROUTING -o {interface_name} -j MASQUERADE')
+
+    distribute_x11_cookie(net)
 
     info("*** Running CLI\n")
-    h1.cmd('dnsmasq --log-queries --no-daemon  --resolv-file=./resolve.conf --addn-hosts=./dnsmasq.hosts 2> dns.log &')
-#    h1.cmd('xterm -xrm \'XTerm.vt100.allowTitleOps: false\' -T \'h1 (Host 1)\' &')
-#    h2.cmd('xterm -xrm \'XTerm.vt100.allowTitleOps: false\' -T \'h2 (Host 2)\' &')
     makeTerm(h1)
     makeTerm(h2)
-    CLI( net )
+    CLI(net)
 
     info("*** Stopping network\n")
     net.stop()
 
 if __name__ == '__main__':
-    setLogLevel( 'info' )
+    setLogLevel('info')
     topology()
-    
-# Backlog
-    #natParams = { 'ip' : '%s/24' % '192.168.0.1' }
-
-    #nat = net.addHost('nat', cls=NAT, subnet='192.168.0.0/24', inetIntf='nat-eth0', localIntf='nat-eth1')
-    #net.addLink(nat, s0, intfName1='nat-eth1') 
-    
-    
-

@@ -110,8 +110,9 @@ def topology():
     distribute_x11_cookie(net)
 
     info("*** Running CLI\n")
-    makeTerm(h1)
-    makeTerm(h2)
+    h1.cmd('dnsmasq --log-queries --no-daemon  --resolv-file=./resolve.conf --addn-hosts=./dnsmasq.hosts 2> dns.log &')
+    h1.cmd(f'zutty -T {h1.name} &')
+    h2.cmd(f'zutty -T {h2.name} &')
     CLI(net)
 
     info("*** Stopping network\n")

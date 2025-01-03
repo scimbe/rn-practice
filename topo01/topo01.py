@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import shutil
 from subprocess import check_output
 
 from sys import exit  # pylint: disable=redefined-builtin
@@ -29,9 +30,9 @@ class LinuxRouter(Node):
 class CustomTCLink(TCLink):
     def __init__(self, *args, **kwargs):
         super(CustomTCLink, self).__init__(*args, **kwargs)
-        # R2Q manuell setzen
-        self.cmd('tc qdisc change dev %s root handle 1: htb default 1 r2q 10' % self.intfName)
-        
+        if hasattr(self, 'intf'):
+            self.cmd('tc qdisc change dev %s root handle 1: htb default 1 r2q 10' % self.intf.name)
+
 # X11-Cookie-Handling
 
 def distribute_x11_cookie(net):
@@ -39,6 +40,10 @@ def distribute_x11_cookie(net):
         display = os.getenv('DISPLAY')
         if not display:
             error("DISPLAY variable not set. X11 forwarding might not work.\n")
+            return
+
+        if not shutil.which('xauth'):
+            error("xauth not found. X11 forwarding may not work.\n")
             return
 
         cookie_output = check_output(f"xauth list {display}", shell=True).decode().strip().split()
@@ -55,14 +60,14 @@ def distribute_x11_cookie(net):
 
 
 def checkIntf(intf):
-    "Make sure intf exists and is not configured."
+    """Make sure intf exists and is not configured."""
     config = quietRun('ip link show %s 2>/dev/null' % intf, shell=True)
     if not config:
         error('Error:', intf, 'does not exist!\n')
         exit(1)
     if 'state UP' in config:
-        error('INFO:', intf, 'is up and may already be in use!\n')
-        info("!!! Not sure if this is a problem - Should keep an eye on this\n")
+        error(f'INFO: {intf} is up. Attempting to disable temporarily.\n')
+        os.system(f'ip link set {intf} down')
 
 
 def topology():
@@ -94,7 +99,6 @@ def topology():
     else:
         max_queue_size = 500
 
-
     net.addLink(h1, r1, intfName1='h1-eth1', intfName2='r1-eth0', cls=CustomTCLink, bw=bw, delay='10ms', max_queue_size=max_queue_size)
     net.addLink(r1, r2, intfName1='r1-eth1', intfName2='r2-eth0', cls=CustomTCLink, bw=bw, delay='10ms', max_queue_size=max_queue_size)
     net.addLink(r2, h2, intfName1='r2-eth1', intfName2='h2-eth0', cls=CustomTCLink, bw=bw, delay='10ms', max_queue_size=max_queue_size)
@@ -115,11 +119,18 @@ def topology():
     r2.cmd('ifconfig r2-eth1 10.0.6.1/24')
     r2.cmd('ifconfig r2-eth0 10.0.4.2/24')
     r2.cmd('ip route add 10.0.1.0/24 via 10.0.4.1')
-    r2.cmd('/usr/sbin/sshd')
+    if shutil.which('sshd'):
+        r2.cmd('/usr/sbin/sshd')
+    else:
+        error("sshd not found on r2.\n")
 
     info('*** Connecting to hw intf: %s \n' % interface_name)
     checkIntf(interface_name)
-    Intf(interface_name, node=s0)
+    try:
+        Intf(interface_name, node=s0)
+    except Exception as e:
+        error(f"Error attaching interface {interface_name}: {e}\n")
+
     s0.cmd(f'ifconfig s0-eth0 {gateway_address}/24')
     s0.cmd('echo "1" > /proc/sys/net/ipv4/ip_forward')
     s0.cmd(f'iptables -t nat -A POSTROUTING -o {interface_name} -j MASQUERADE')
@@ -127,9 +138,6 @@ def topology():
     distribute_x11_cookie(net)
 
     info("*** Running CLI\n")
-    h1.cmd('dnsmasq --log-queries --no-daemon  --resolv-file=./resolve.conf --addn-hosts=./dnsmasq.hosts 2> dns.log &')
-    h1.cmd(f'zutty -T {h1.name} &')
-    h2.cmd(f'zutty -T {h2.name} &')
     CLI(net)
 
     info("*** Stopping network\n")

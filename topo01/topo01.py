@@ -95,9 +95,9 @@ def topology():
     if bw <= 10:
         max_queue_size = 100
     elif bw <= 50:
-        max_queue_size = 300
+        max_queue_size = 200
     else:
-        max_queue_size = 500
+        max_queue_size = 300
 
     net.addLink(h1, r1, intfName1='h1-eth1', intfName2='r1-eth0', cls=CustomTCLink, bw=bw, delay='10ms', max_queue_size=max_queue_size)
     net.addLink(r1, r2, intfName1='r1-eth1', intfName2='r2-eth0', cls=CustomTCLink, bw=bw, delay='10ms', max_queue_size=max_queue_size)

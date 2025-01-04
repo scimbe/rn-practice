@@ -111,8 +111,9 @@ def topology():
 
     info("*** Running CLI\n")
     h1.cmd('dnsmasq --log-queries --no-daemon  --resolv-file=./resolve.conf --addn-hosts=./dnsmasq.hosts 2> dns.log &')
-    h1.cmd(f'zutty -T {h1.name} &')
-    h2.cmd(f'zutty -T {h2.name} &')
+    h1.cmd(f"zutty -e bash --rcfile <(echo 'PS1=\"\\u@{h1.name}: \\w\\$ \"') &")
+    h2.cmd(f"zutty -e bash --rcfile <(echo 'PS1=\"\\u@{h2.name}: \\w\\$ \"') &")
+
     CLI(net)
 
     info("*** Stopping network\n")

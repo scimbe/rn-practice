@@ -15,8 +15,8 @@ log() {
 
 # Prüfung auf Root-Rechte
 check_root() {
-    if [[ $EUID -ne 0 ]]; then
-        log "ERROR" "Dieses Skript benötigt Root-Rechte. Bitte mit sudo ausführen."
+    if [[ $EUID -eq 0 ]]; then
+        log "ERROR" "Dieses Skript muss als mininet gestartet werden. Es arbeitet später mit sudo."
         exit 1
     fi
 }
@@ -69,18 +69,18 @@ cleanup() {
 
     # NAT-Regel entfernen
     log "INFO" "Entferne NAT-Regel..."
-    iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE &>/dev/null || log "WARNING" "Konnte NAT-Regel nicht entfernen."
+    sudo iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE &>/dev/null || log "WARNING" "Konnte NAT-Regel nicht entfernen."
     
     
     # Prüfe, ob Backup-Datei existiert und stelle sie wieder her
     if [[ -f "$backup_resolv_conf" ]]; then
         log "INFO" "Stelle resolv.conf wieder her..."
-        mv "$backup_resolv_conf" "$resolv_conf" || log "WARNING" "Konnte Backup nicht wiederherstellen."
+        sudo mv "$backup_resolv_conf" "$resolv_conf" || log "WARNING" "Konnte Backup nicht wiederherstellen."
     fi
     
     # Beende laufende mininet-Instanzen
     log "INFO" "Bereinige Mininet..."
-    mn -c &>/dev/null || log "WARNING" "Mininet-Bereinigung fehlgeschlagen."
+    sudo mn -c &>/dev/null || log "WARNING" "Mininet-Bereinigung fehlgeschlagen."
     
     # Beende alle xterm-Prozesse
     log "INFO" "Beende xterm-Prozesse..."
@@ -88,7 +88,7 @@ cleanup() {
     
     # Stelle sicher, dass Open vSwitch gestoppt wird
     log "INFO" "Stoppe Open vSwitch..."
-    /etc/init.d/openvswitch-switch stop &>/dev/null || log "WARNING" "Open vSwitch konnte nicht gestoppt werden."
+    sudo /etc/init.d/openvswitch-switch stop &>/dev/null || log "WARNING" "Open vSwitch konnte nicht gestoppt werden."
     
     log "INFO" "Aufräumen abgeschlossen."
     exit 1
@@ -100,8 +100,8 @@ trap cleanup SIGINT SIGTERM ERR
 # Hauptfunktionen
 start_ovs() {
     log "INFO" "Open vSwitch wird gestartet"
-    if ! service openvswitch-switch status &>/dev/null; then
-        service openvswitch-switch start || {
+    if ! sudo service openvswitch-switch status &>/dev/null; then
+        sudo service openvswitch-switch start || {
             log "ERROR" "Open vSwitch konnte nicht gestartet werden. Ist das Paket installiert?"
             exit 1
         }
@@ -110,7 +110,7 @@ start_ovs() {
     fi
     
     # Überprüfe, ob OVS tatsächlich läuft
-    ovs-vsctl show &>/dev/null || {
+    sudo ovs-vsctl show &>/dev/null || {
         log "ERROR" "Open vSwitch scheint nicht korrekt zu funktionieren."
         exit 1
     }
@@ -136,11 +136,11 @@ configure_nat() {
     fi
     
     # Prüfe, ob die NAT-Regel bereits existiert
-    if iptables -t nat -C POSTROUTING -o "$eth_interface" -j MASQUERADE &>/dev/null; then
+    if sudo iptables -t nat -C POSTROUTING -o "$eth_interface" -j MASQUERADE &>/dev/null; then
         log "INFO" "NAT-Regel existiert bereits."
     else
         log "INFO" "Füge NAT-Regel hinzu: POSTROUTING -o $eth_interface -j MASQUERADE"
-        iptables -t nat -A POSTROUTING -o "$eth_interface" -j MASQUERADE || {
+        sudo iptables -t nat -A POSTROUTING -o "$eth_interface" -j MASQUERADE || {
             log "ERROR" "Konnte NAT-Regel nicht einrichten. Prüfen Sie die Rechte und iptables-Konfiguration."
             return 1
         }
@@ -222,7 +222,6 @@ restore_nameserver() {
 main() {
     log "INFO" "Start der Topologie-Konfiguration"
     
-    check_root
     check_dependencies
     check_scripts
     

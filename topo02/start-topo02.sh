@@ -42,7 +42,7 @@ check_dependencies() {
 # Prüfung auf Skriptdateien mit Fehlerbehandlung
 check_scripts() {
     local script_file="./getIntWithIntenet.sh"
-    local topology_file="./topo01.py"
+    local topology_file="./topo02.py"
     
     if [[ ! -f "$script_file" ]]; then
         log "ERROR" "$script_file nicht gefunden."

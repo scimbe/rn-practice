@@ -66,6 +66,11 @@ check_scripts() {
 # Aufräumfunktion für fehlerhafte Beendigung
 cleanup() {
     log "INFO" "Aufräumen nach Fehler oder Unterbrechung..."
+
+    # NAT-Regel entfernen
+    log "INFO" "Entferne NAT-Regel..."
+    iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE &>/dev/null || log "WARNING" "Konnte NAT-Regel nicht entfernen."
+    
     
     # Prüfe, ob Backup-Datei existiert und stelle sie wieder her
     if [[ -f "$backup_resolv_conf" ]]; then
@@ -111,6 +116,39 @@ start_ovs() {
     }
 }
 
+configure_nat() {
+    log "INFO" "Konfiguriere NAT für Internetzugriff"
+    
+    # Prüfe, ob das eth0-Interface existiert
+    if ! ip link show eth0 &>/dev/null; then
+        log "WARNING" "Interface eth0 nicht gefunden. Versuche, das Standard-Interface zu bestimmen..."
+        local default_iface=$(ip -4 route show default | awk '{print $5}' | head -n1)
+        
+        if [[ -z "$default_iface" ]]; then
+            log "ERROR" "Kein Default-Interface gefunden. NAT kann nicht konfiguriert werden."
+            return 1
+        fi
+        
+        log "INFO" "Verwende $default_iface anstelle von eth0"
+        eth_interface="$default_iface"
+    else
+        eth_interface="eth0"
+    fi
+    
+    # Prüfe, ob die NAT-Regel bereits existiert
+    if iptables -t nat -C POSTROUTING -o "$eth_interface" -j MASQUERADE &>/dev/null; then
+        log "INFO" "NAT-Regel existiert bereits."
+    else
+        log "INFO" "Füge NAT-Regel hinzu: POSTROUTING -o $eth_interface -j MASQUERADE"
+        iptables -t nat -A POSTROUTING -o "$eth_interface" -j MASQUERADE || {
+            log "ERROR" "Konnte NAT-Regel nicht einrichten. Prüfen Sie die Rechte und iptables-Konfiguration."
+            return 1
+        }
+    fi
+
+    return 0
+}
+ 
 configure_nameserver() {
     resolv_conf="/etc/resolv.conf"
     backup_resolv_conf="/etc/resolv.conf.backup"
@@ -189,6 +227,12 @@ main() {
     check_scripts
     
     start_ovs
+
+    # Konfiguriere NAT für Internetzugriff
+    if ! configure_nat; then
+        log "ERROR" "NAT-Konfiguration fehlgeschlagen."
+        cleanup
+    fi
     
     # Führe getIntWithIntenet.sh aus mit Fehlerbehandlung
     if ! ./getIntWithIntenet.sh; then

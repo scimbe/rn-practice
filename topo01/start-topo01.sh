@@ -208,11 +208,11 @@ run_topology() {
 restore_nameserver() {
     log "INFO" "Backup der resolv.conf wird zurückgespielt"
     if [[ -f "$backup_resolv_conf" ]]; then
-        if ! cp "$backup_resolv_conf" "$resolv_conf"; then
+        if ! sudo cp "$backup_resolv_conf" "$resolv_conf"; then
             log "ERROR" "Wiederherstellung der resolv.conf fehlgeschlagen."
             exit 1
         fi
-        rm -f "$backup_resolv_conf"
+        sudo rm -f "$backup_resolv_conf"
     else
         log "WARNING" "Backup-Datei für resolv.conf nicht gefunden."
     fi

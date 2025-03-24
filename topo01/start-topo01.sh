@@ -26,7 +26,7 @@ check_dependencies() {
     local missing_deps=()
     
     # Überprüfung der erforderlichen Pakete
-    for cmd in openvswitch-switch mininet python3 xterm awk; do
+    for cmd in  mininet python3 xterm zutty awk; do
         if ! command -v "$cmd" &> /dev/null && ! dpkg -l | grep -q "$cmd"; then
             missing_deps+=("$cmd")
         fi

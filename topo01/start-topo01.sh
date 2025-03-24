@@ -177,14 +177,14 @@ configure_nameserver() {
     # Prüfe, ob die neue Datei erstellt wurde
     if [[ ! -s "/tmp/resolv.conf.new" ]]; then
         log "ERROR" "Konnte neue resolv.conf nicht erstellen."
-        cp "$backup_resolv_conf" "$resolv_conf"
+        sudo cp "$backup_resolv_conf" "$resolv_conf"
         exit 1
     fi
     
     # Ersetzung nur durchführen, wenn die Datei erfolgreich erstellt wurde
-    cp "/tmp/resolv.conf.new" "$resolv_conf" || {
+    sudo cp "/tmp/resolv.conf.new" "$resolv_conf" || {
         log "ERROR" "Konnte neue resolv.conf nicht anwenden."
-        cp "$backup_resolv_conf" "$resolv_conf"
+        sudo cp "$backup_resolv_conf" "$resolv_conf"
         exit 1
     }
     rm -f "/tmp/resolv.conf.new"

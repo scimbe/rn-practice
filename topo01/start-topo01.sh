@@ -197,7 +197,7 @@ run_topology() {
     mn -c || log "WARNING" "Mininet Cleanup fehlgeschlagen, fahre trotzdem fort."
     
     log "INFO" "Topologie wird gestartet"
-    if ! python3 topo01.py; then
+    if ! sudo -E python3 topo01.py; then
         log "ERROR" "Topologie-Start fehlgeschlagen."
         return 1
     fi

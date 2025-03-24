@@ -161,7 +161,7 @@ configure_nameserver() {
     fi
     
     log "INFO" "Backup der aktuellen $resolv_conf wird erstellt"
-    if ! cp "$resolv_conf" "$backup_resolv_conf"; then
+    if ! sudo cp "$resolv_conf" "$backup_resolv_conf"; then
         log "ERROR" "Backup von $resolv_conf fehlgeschlagen. Prüfen Sie die Rechte."
         exit 1
     fi

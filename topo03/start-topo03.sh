@@ -119,37 +119,43 @@ configure_nameserver() {
     resolv_conf="/etc/resolv.conf"
     backup_resolv_conf="/etc/resolv.conf.backup"
     nameserver="nameserver 10.0.1.2"
-
+    
+    # Prüfe, ob resolv.conf existiert und lesbar ist
     if [[ ! -f "$resolv_conf" ]]; then
         log "ERROR" "$resolv_conf existiert nicht."
         exit 1
     fi
-
-    log "INFO" "Backup von $resolv_conf wird erstellt"
-    sudo cp "$resolv_conf" "$backup_resolv_conf" || {
-        log "ERROR" "Backup fehlgeschlagen."
+    
+    log "INFO" "Backup der aktuellen $resolv_conf wird erstellt"
+    if ! sudo cp "$resolv_conf" "$backup_resolv_conf"; then
+        log "ERROR" "Backup von $resolv_conf fehlgeschlagen. Prüfen Sie die Rechte."
         exit 1
-    }
-
-    local temp_resolv
-    temp_resolv=$(mktemp /tmp/resolv.conf.XXXXXX)
-
-    awk -v ns="$nameserver" 'BEGIN {print ns} !seen[$0]++ && \$0 != ns {print}' "$backup_resolv_conf" > "$temp_resolv"
-    if [[ ! -s "$temp_resolv" ]]; then
-        log "ERROR" "Neue resolv.conf konnte nicht erstellt werden."
+    fi
+    
+    log "INFO" "Prüfen, ob Nameserver $nameserver bereits in $resolv_conf existiert"
+    
+    # Nameserver einfügen, wenn nicht vorhanden oder an den Anfang verschieben
+    awk -v ns="$nameserver" '
+    BEGIN {print ns}
+    !seen[$0]++ && $0 != ns {print}
+    ' "$backup_resolv_conf" > "/tmp/resolv.conf.new"
+    
+    # Prüfe, ob die neue Datei erstellt wurde
+    if [[ ! -s "/tmp/resolv.conf.new" ]]; then
+        log "ERROR" "Konnte neue resolv.conf nicht erstellen."
         sudo cp "$backup_resolv_conf" "$resolv_conf"
         exit 1
     fi
-
-    sudo cp "$temp_resolv" "$resolv_conf" || {
-        log "ERROR" "Neue resolv.conf konnte nicht angewendet werden."
+    
+    # Ersetzung nur durchführen, wenn die Datei erfolgreich erstellt wurde
+    sudo cp "/tmp/resolv.conf.new" "$resolv_conf" || {
+        log "ERROR" "Konnte neue resolv.conf nicht anwenden."
         sudo cp "$backup_resolv_conf" "$resolv_conf"
         exit 1
     }
-
-    sudo sed -i '/^nameserver .*:/d' "$resolv_conf"
-    rm -f "$temp_resolv"
-    log "INFO" "Nameserver wurde konfiguriert."
+    rm -f "/tmp/resolv.conf.new"
+    
+    log "INFO" "Nameserver wurde an den Anfang der Liste gesetzt."
 }
 
 run_topology() {

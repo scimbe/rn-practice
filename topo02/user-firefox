@@ -4,7 +4,7 @@ import os
 import pwd
 
 
-user_info = pwd.getpwnam('parallels')
+user_info = pwd.getpwnam('mininet')
 os.setuid(user_info.pw_uid)
 
 env = os.environ.copy()

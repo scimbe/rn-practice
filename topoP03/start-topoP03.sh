@@ -1,5 +1,3 @@
-
-
 start_ovs() {
     log "INFO" "Open vSwitch wird gestartet"
     if ! sudo service openvswitch-switch status &>/dev/null; then
@@ -15,9 +13,6 @@ start_ovs() {
         exit 1
     }
 }
-
-
-
 
 echo "start topology"
 start_ovs

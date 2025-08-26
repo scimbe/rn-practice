@@ -5,22 +5,6 @@ from mininet.cli import CLI
 from mininet.log import setLogLevel
 
 
-start_ovs() {
-    log "INFO" "Open vSwitch wird gestartet"
-    if ! sudo service openvswitch-switch status &>/dev/null; then
-        sudo service openvswitch-switch start || {
-            log "ERROR" "Open vSwitch konnte nicht gestartet werden."
-            exit 1
-        }
-    else
-        log "INFO" "Open vSwitch läuft bereits."
-    fi
-    sudo ovs-vsctl show &>/dev/null || {
-        log "ERROR" "Open vSwitch scheint nicht korrekt zu funktionieren."
-        exit 1
-    }
-}
-
 class MyTopo(Topo):
     def build(self):
         # Erstellen von zwei Switches
@@ -54,7 +38,7 @@ def configureRouter(net):
 
 if __name__ == '__main__':
     setLogLevel('info')
-    start_ovs
+ 
     topo = MyTopo()
     net = Mininet(topo=topo, controller=lambda name: RemoteController(name, ip='127.0.0.1'))
     net.start()

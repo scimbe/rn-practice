@@ -4,6 +4,23 @@ from mininet.node import Controller, RemoteController, Node
 from mininet.cli import CLI
 from mininet.log import setLogLevel
 
+
+start_ovs() {
+    log "INFO" "Open vSwitch wird gestartet"
+    if ! sudo service openvswitch-switch status &>/dev/null; then
+        sudo service openvswitch-switch start || {
+            log "ERROR" "Open vSwitch konnte nicht gestartet werden."
+            exit 1
+        }
+    else
+        log "INFO" "Open vSwitch läuft bereits."
+    fi
+    sudo ovs-vsctl show &>/dev/null || {
+        log "ERROR" "Open vSwitch scheint nicht korrekt zu funktionieren."
+        exit 1
+    }
+}
+
 class MyTopo(Topo):
     def build(self):
         # Erstellen von zwei Switches
@@ -29,21 +46,7 @@ class MyTopo(Topo):
         self.addLink(h3, s2)
         self.addLink(h4, s2)
         
-start_ovs() {
-    log "INFO" "Open vSwitch wird gestartet"
-    if ! sudo service openvswitch-switch status &>/dev/null; then
-        sudo service openvswitch-switch start || {
-            log "ERROR" "Open vSwitch konnte nicht gestartet werden."
-            exit 1
-        }
-    else
-        log "INFO" "Open vSwitch läuft bereits."
-    fi
-    sudo ovs-vsctl show &>/dev/null || {
-        log "ERROR" "Open vSwitch scheint nicht korrekt zu funktionieren."
-        exit 1
-    }
-}
+
 
 def configureRouter(net):
     router = net.get('r1')

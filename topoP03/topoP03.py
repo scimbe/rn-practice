@@ -28,6 +28,22 @@ class MyTopo(Topo):
         self.addLink(h2, s1)
         self.addLink(h3, s2)
         self.addLink(h4, s2)
+        
+start_ovs() {
+    log "INFO" "Open vSwitch wird gestartet"
+    if ! sudo service openvswitch-switch status &>/dev/null; then
+        sudo service openvswitch-switch start || {
+            log "ERROR" "Open vSwitch konnte nicht gestartet werden."
+            exit 1
+        }
+    else
+        log "INFO" "Open vSwitch läuft bereits."
+    fi
+    sudo ovs-vsctl show &>/dev/null || {
+        log "ERROR" "Open vSwitch scheint nicht korrekt zu funktionieren."
+        exit 1
+    }
+}
 
 def configureRouter(net):
     router = net.get('r1')
@@ -35,6 +51,7 @@ def configureRouter(net):
 
 if __name__ == '__main__':
     setLogLevel('info')
+    start_ovs
     topo = MyTopo()
     net = Mininet(topo=topo, controller=lambda name: RemoteController(name, ip='127.0.0.1'))
     net.start()

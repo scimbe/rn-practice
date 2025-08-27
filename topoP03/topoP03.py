@@ -7,8 +7,10 @@ from mininet.log import setLogLevel
 class MyTopo(Topo):
     def build(self):
         # Erstellen von zwei Switches
-        s1 = self.addSwitch('s1')
-        s2 = self.addSwitch('s2')
+        
+        s1 = self.addSwitch('s1', failMode='standalone')
+        s2 = self.addSwitch('s2', failMode='standalone')
+
 
         # Erstellen von zwei Hosts für Netzwerk 1 ohne IP-Adressen
         h1 = self.addHost('h1')

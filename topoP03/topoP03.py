@@ -42,6 +42,16 @@ if __name__ == '__main__':
     topo = MyTopo()
     net = Mininet(topo=topo, controller=lambda name: RemoteController(name, ip='127.0.0.1'))
     net.start()
+
+            # "sh …" ausführen
+    net.cmd('ovs-vsctl set-fail-mode s1 standalone')
+    net.cmd('ovs-ofctl del-flows s1')
+    net.cmd('ovs-ofctl add-flow s1 "priority=0,actions=NORMAL"')
+
+    net.cmd('ovs-vsctl set-fail-mode s2 standalone')
+    net.cmd('ovs-ofctl del-flows s2')
+    net.cmd('ovs-ofctl add-flow s2 "priority=0,actions=NORMAL"')
+    
     configureRouter(net)
     CLI(net)
     net.stop()

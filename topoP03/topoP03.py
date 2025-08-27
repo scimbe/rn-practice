@@ -44,8 +44,10 @@ if __name__ == '__main__':
     s1 = net.get('s1')
     s2 = net.get('s2')
 
+    CLI(net)
+
+
     s1.cmd('ovs-vsctl set-fail-mode s1 standalone')
     s2.cmd('ovs-vsctl set-fail-mode s2 standalone')
-    CLI(net)
     net.stop()
 

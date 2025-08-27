@@ -8,8 +8,9 @@ from mininet.log import setLogLevel
 class MyTopo(Topo):
     def build(self):
         # Erstellen von zwei Switches
-        s1 = self.addSwitch('s1')
-        s2 = self.addSwitch('s2')
+        
+        s1 = self.addSwitch('s1', failMode='standalone')
+        s2 = self.addSwitch('s2', failMode='standalone')
 
         # Erstellen von zwei Hosts für Netzwerk 1 ohne IP-Adressen
         h1 = self.addHost('h1')
@@ -43,14 +44,7 @@ if __name__ == '__main__':
     net = Mininet(topo=topo, controller=lambda name: RemoteController(name, ip='127.0.0.1'))
     net.start()
 
-            # "sh …" ausführen
-    net.cmd('ovs-vsctl set-fail-mode s1 standalone')
-    net.cmd('ovs-ofctl del-flows s1')
-    net.cmd('ovs-ofctl add-flow s1 "priority=0,actions=NORMAL"')
-
-    net.cmd('ovs-vsctl set-fail-mode s2 standalone')
-    net.cmd('ovs-ofctl del-flows s2')
-    net.cmd('ovs-ofctl add-flow s2 "priority=0,actions=NORMAL"')
+            # "sh …" ausführenORMAL"')
     
     configureRouter(net)
     CLI(net)

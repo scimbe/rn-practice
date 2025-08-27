@@ -40,7 +40,12 @@ if __name__ == '__main__':
     topo = MyTopo()
     net = Mininet(topo=topo, controller=lambda name: RemoteController(name, ip='127.0.0.1'))
     net.start()
-    configureRouter(net)
+    configureRouter(net) 
+    s1 = net.get('s1')
+    s2 = net.get('s2')
+
+    s1.cmd('ovs-vsctl set-fail-mode s1 standalone')
+    s2.cmd('ovs-vsctl set-fail-mode s2 standalone')
     CLI(net)
     net.stop()
 
